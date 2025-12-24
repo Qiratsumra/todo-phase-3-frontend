@@ -47,7 +47,7 @@ export function EditTaskModal({ task, onClose, onTaskUpdated }: EditTaskModalPro
   });
 
   // Fixed URL Logic: Base URL shouldn't include trailing slash if you add it later
-  const baseUrl = "https://fullstack-todo-backend-1-p9wb.onrender.com/api";
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL;
 
   // Reset the form when the task prop changes
   useEffect(() => {

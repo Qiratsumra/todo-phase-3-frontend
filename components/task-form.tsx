@@ -58,10 +58,6 @@ export function TaskForm({ onTaskAdded }: TaskFormProps) {
     },
   });
 
-  const getApiUrl = () => {
-    return "https://fullstack-todo-backend-1-p9wb.onrender.com/api";
-  };
-
   const onSubmit = async (data: FormValues) => {
     setError(null);
     setIsSubmitting(true);
@@ -83,7 +79,7 @@ export function TaskForm({ onTaskAdded }: TaskFormProps) {
         completed: false,
       };
 
-      const apiUrl = getApiUrl();
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
       const response = await fetch(`${apiUrl}/tasks`, {
         method: "POST",
         headers: {

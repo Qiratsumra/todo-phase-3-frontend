@@ -50,7 +50,7 @@ const FormSchema = z.object({
 const TaskDetail = ({ task, onClose, onTaskUpdated, onDelete }: TaskDetailProps) => {
   const [newSubtask, setNewSubtask] = useState("");
   const [isSaving, setIsSaving] = useState(false);
-  const API_URL = "https://fullstack-todo-backend-1-p9wb.onrender.com/api";
+  const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
   // Map numeric priority to string for form
   const getPriorityString = (priority: number | string | undefined) => {
