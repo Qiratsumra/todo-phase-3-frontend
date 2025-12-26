@@ -23,7 +23,6 @@ export async function sendChatMessage(
   }
 
   try {
-    // Fixed: Added /api prefix
     const url = `${apiUrl}/api/${userId}/chat`;
     console.log('Sending chat message to:', url);
     console.log('Request:', request);
@@ -33,6 +32,7 @@ export async function sendChatMessage(
       headers: {
         "Content-Type": "application/json",
       },
+      credentials: "include", // ✅ ADDED - Important for CORS with auth
       body: JSON.stringify(request),
     });
 
@@ -49,7 +49,6 @@ export async function sendChatMessage(
         errorMessage = errorDetails.detail || errorDetails.message || errorDetails.error || errorMessage;
       } catch (parseError) {
         console.log('Could not parse error response:', parseError);
-        // Try to get response text instead
         try {
           const text = await response.text();
           console.log('Error response text:', text);
@@ -72,11 +71,9 @@ export async function sendChatMessage(
     return response.json();
   } catch (error) {
     console.error('Chat API error:', error);
-    // Re-throw if it's already an Error
     if (error instanceof Error) {
       throw error;
     }
-    // Handle unexpected error types
     throw new Error("Failed to send chat message");
   }
 }
@@ -94,8 +91,12 @@ export async function getConversations(
   }
 
   try {
-    // Fixed: Added /api prefix
-    const response = await fetch(`${apiUrl}/api/${userId}/conversations?limit=${limit}`);
+    const response = await fetch(
+      `${apiUrl}/api/${userId}/conversations?limit=${limit}`,
+      {
+        credentials: "include", // ✅ ADDED
+      }
+    );
 
     if (!response.ok) {
       let errorMessage = `HTTP error: ${response.status}`;
@@ -131,9 +132,11 @@ export async function getConversationDetail(
   }
 
   try {
-    // Fixed: Added /api prefix
     const response = await fetch(
-      `${apiUrl}/api/${userId}/conversations/${conversationId}?limit=${limit}`
+      `${apiUrl}/api/${userId}/conversations/${conversationId}?limit=${limit}`,
+      {
+        credentials: "include", // ✅ ADDED
+      }
     );
 
     if (!response.ok) {
@@ -169,11 +172,11 @@ export async function deleteConversation(
   }
 
   try {
-    // Fixed: Added /api prefix
     const response = await fetch(
       `${apiUrl}/api/${userId}/conversations/${conversationId}`,
       {
         method: "DELETE",
+        credentials: "include", // ✅ ADDED
       }
     );
 

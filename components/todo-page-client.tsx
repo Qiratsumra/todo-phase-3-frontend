@@ -62,7 +62,7 @@ const TodoPageClient = ({ user }: TodoPageClientProps) => {
 
     try {
       setError(null);
-      const response = await fetch(`${API_URL}/api/tasks`);
+      const response = await fetch(`${API_URL}/api/tasks/`);
       if (!response.ok) throw new Error("Failed to fetch tasks");
       const data = await response.json();
       const mappedTasks = data.map(mapApiTaskToTask);
