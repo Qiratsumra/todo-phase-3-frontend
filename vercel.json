@@ -2,15 +2,6 @@
   "buildCommand": "npm run build",
   "outputDirectory": ".next",
   "framework": "nextjs",
-  "env": {
-    "BETTER_AUTH_SECRET": "@better-auth-secret",
-    "DATABASE_URL": "@database-url",
-    "NEXT_PUBLIC_OPENAI_DOMAIN_KEY": "@openai-domain-key",
-    "NEXT_PUBLIC_API_URL": "https://todo-phase-3-backend.onrender.com",
-    "NODE_ENV": "production",
-    "PGSSLMODE": "require",
-    "NODE_TLS_REJECT_UNAUTHORIZED": "0"
-  },
   "headers": [
     {
       "source": "/api/(.*)",
