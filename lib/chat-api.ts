@@ -1,7 +1,3 @@
-/**
- * Chat API client for the AI chatbot.
- */
-
 import type {
   ChatRequest,
   ChatResponse,
@@ -27,7 +23,8 @@ export async function sendChatMessage(
   }
 
   try {
-    const url = `${apiUrl}/${userId}/chat`;
+    // Fixed: Added /api prefix
+    const url = `${apiUrl}/api/${userId}/chat`;
     console.log('Sending chat message to:', url);
     console.log('Request:', request);
 
@@ -97,7 +94,8 @@ export async function getConversations(
   }
 
   try {
-    const response = await fetch(`${apiUrl}/${userId}/conversations?limit=${limit}`);
+    // Fixed: Added /api prefix
+    const response = await fetch(`${apiUrl}/api/${userId}/conversations?limit=${limit}`);
 
     if (!response.ok) {
       let errorMessage = `HTTP error: ${response.status}`;
@@ -133,8 +131,9 @@ export async function getConversationDetail(
   }
 
   try {
+    // Fixed: Added /api prefix
     const response = await fetch(
-      `${apiUrl}/${userId}/conversations/${conversationId}?limit=${limit}`
+      `${apiUrl}/api/${userId}/conversations/${conversationId}?limit=${limit}`
     );
 
     if (!response.ok) {
@@ -170,8 +169,9 @@ export async function deleteConversation(
   }
 
   try {
+    // Fixed: Added /api prefix
     const response = await fetch(
-      `${apiUrl}/${userId}/conversations/${conversationId}`,
+      `${apiUrl}/api/${userId}/conversations/${conversationId}`,
       {
         method: "DELETE",
       }

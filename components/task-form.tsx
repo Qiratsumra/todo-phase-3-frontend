@@ -80,7 +80,7 @@ export function TaskForm({ onTaskAdded }: TaskFormProps) {
       };
 
       const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-      const response = await fetch(`${apiUrl}/tasks`, {
+      const response = await fetch(`${apiUrl}/api/tasks`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

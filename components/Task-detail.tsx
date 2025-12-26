@@ -125,7 +125,7 @@ const TaskDetail = ({ task, onClose, onTaskUpdated, onDelete }: TaskDetailProps)
         completed: task.completed,
       };
 
-      const response = await fetch(`${API_URL}/tasks/${task.id}`, {
+      const response = await fetch(`${API_URL}/api/tasks/${task.id}`, {
         method: 'PUT',
         headers: { 
           'Content-Type': 'application/json',

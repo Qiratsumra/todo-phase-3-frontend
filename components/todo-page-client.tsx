@@ -62,7 +62,7 @@ const TodoPageClient = ({ user }: TodoPageClientProps) => {
 
     try {
       setError(null);
-      const response = await fetch(`${API_URL}/tasks`);
+      const response = await fetch(`${API_URL}/api/tasks`);
       if (!response.ok) throw new Error("Failed to fetch tasks");
       const data = await response.json();
       const mappedTasks = data.map(mapApiTaskToTask);
@@ -197,7 +197,7 @@ const TodoPageClient = ({ user }: TodoPageClientProps) => {
     if (!API_URL) return;
 
     try {
-      const response = await fetch(`${API_URL}/tasks/${taskId}`, { method: "DELETE" });
+      const response = await fetch(`${API_URL}/api/tasks/${taskId}`, { method: "DELETE" });
       if (!response.ok) throw new Error("Failed to delete task");
       await fetchTasks();
       if (selectedTask?.id === taskId) setSelectedTask(null);
@@ -214,7 +214,7 @@ const TodoPageClient = ({ user }: TodoPageClientProps) => {
     setTasks(tasks.map((t) => (t.id === startedTask.id ? updatedTask : t)));
 
     try {
-      const response = await fetch(`${API_URL}/tasks/${startedTask.id}`, {
+      const response = await fetch(`${API_URL}/api/tasks/${startedTask.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ completed: updatedTask.completed }),

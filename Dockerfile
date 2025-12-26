@@ -15,8 +15,11 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Set environment variable for standalone build
+# Set environment variables for build time
 ENV NEXT_TELEMETRY_DISABLED=1
+# Default API URL for Docker build - can be overridden with --build-arg
+ARG NEXT_PUBLIC_API_URL=https://todo-phase-3-backend.onrender.com
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 
 # Build Next.js application with standalone output
 RUN npm run build
