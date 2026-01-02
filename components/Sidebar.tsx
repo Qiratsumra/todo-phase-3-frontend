@@ -27,6 +27,7 @@ interface SidebarProps {
   onFilterChange?: (filter: FilterType) => void;
   onTagFilter?: (tag: string) => void;
   activeFilter?: FilterType;
+  onAddTask?: () => void;
 }
 
 const Sidebar = ({
@@ -34,7 +35,8 @@ const Sidebar = ({
   tasks = [],
   onFilterChange,
   onTagFilter,
-  activeFilter = 'all'
+  activeFilter = 'all',
+  onAddTask
 }: SidebarProps) => {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -128,6 +130,19 @@ const Sidebar = ({
             onChange={handleSearchChange}
           />
         </div>
+
+        {/* Add Task Button */}
+        <div className="mt-4">
+          <Button
+            onClick={onAddTask}
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center gap-2 py-5 rounded-xl shadow-md transition-all hover:shadow-lg"
+          >
+            <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center">
+              <span className="text-xl font-bold">+</span>
+            </div>
+            <span className="font-semibold">New Task</span>
+          </Button>
+        </div>
       </div>
 
       {/* Scrollable Navigation Area */}
@@ -141,15 +156,15 @@ const Sidebar = ({
           <button
             onClick={() => handleFilterClick('all')}
             className={`w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${activeFilter === 'all'
-                ? 'bg-blue-50 text-blue-600'
-                : 'hover:bg-gray-100 text-gray-700'
+              ? 'bg-blue-50 text-blue-600'
+              : 'hover:bg-gray-100 text-gray-700'
               }`}
           >
             <Home className="w-5 h-5" />
             <span>All Tasks</span>
             <span className={`ml-auto text-xs rounded-full px-2 py-0.5 ${activeFilter === 'all'
-                ? 'bg-blue-500 text-white'
-                : 'bg-gray-200 text-gray-700'
+              ? 'bg-blue-500 text-white'
+              : 'bg-gray-200 text-gray-700'
               }`}>
               {totalTasks}
             </span>
@@ -157,8 +172,8 @@ const Sidebar = ({
           <button
             onClick={() => handleFilterClick('pending')}
             className={`w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${activeFilter === 'pending'
-                ? 'bg-blue-50 text-blue-600'
-                : 'hover:bg-gray-100 text-gray-700'
+              ? 'bg-blue-50 text-blue-600'
+              : 'hover:bg-gray-100 text-gray-700'
               }`}
           >
             <Circle className="w-5 h-5 text-gray-500" />
@@ -170,8 +185,8 @@ const Sidebar = ({
           <button
             onClick={() => handleFilterClick('completed')}
             className={`w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${activeFilter === 'completed'
-                ? 'bg-blue-50 text-blue-600'
-                : 'hover:bg-gray-100 text-gray-700'
+              ? 'bg-blue-50 text-blue-600'
+              : 'hover:bg-gray-100 text-gray-700'
               }`}
           >
             <CheckCircle2 className="w-5 h-5 text-green-500" />
@@ -183,8 +198,8 @@ const Sidebar = ({
           <button
             onClick={() => handleFilterClick('dueSoon')}
             className={`w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${activeFilter === 'dueSoon'
-                ? 'bg-blue-50 text-blue-600'
-                : 'hover:bg-gray-100 text-gray-700'
+              ? 'bg-blue-50 text-blue-600'
+              : 'hover:bg-gray-100 text-gray-700'
               }`}
           >
             <Clock className="w-5 h-5 text-orange-500" />
@@ -198,8 +213,8 @@ const Sidebar = ({
           <button
             onClick={() => handleFilterClick('highPriority')}
             className={`w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${activeFilter === 'highPriority'
-                ? 'bg-blue-50 text-blue-600'
-                : 'hover:bg-gray-100 text-gray-700'
+              ? 'bg-blue-50 text-blue-600'
+              : 'hover:bg-gray-100 text-gray-700'
               }`}
           >
             <AlertCircle className="w-5 h-5 text-red-500" />
@@ -220,8 +235,8 @@ const Sidebar = ({
           <button
             onClick={() => handleFilterClick('High')}
             className={`w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${activeFilter === 'High'
-                ? 'bg-blue-50 text-blue-600'
-                : 'hover:bg-gray-100 text-gray-700'
+              ? 'bg-blue-50 text-blue-600'
+              : 'hover:bg-gray-100 text-gray-700'
               }`}
           >
             <div className="w-2 h-2 rounded-full bg-red-500"></div>
@@ -233,8 +248,8 @@ const Sidebar = ({
           <button
             onClick={() => handleFilterClick('Medium')}
             className={`w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${activeFilter === 'Medium'
-                ? 'bg-blue-50 text-blue-600'
-                : 'hover:bg-gray-100 text-gray-700'
+              ? 'bg-blue-50 text-blue-600'
+              : 'hover:bg-gray-100 text-gray-700'
               }`}
           >
             <div className="w-2 h-2 rounded-full bg-orange-500"></div>
@@ -246,8 +261,8 @@ const Sidebar = ({
           <button
             onClick={() => handleFilterClick('Low')}
             className={`w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${activeFilter === 'Low'
-                ? 'bg-blue-50 text-blue-600'
-                : 'hover:bg-gray-100 text-gray-700'
+              ? 'bg-blue-50 text-blue-600'
+              : 'hover:bg-gray-100 text-gray-700'
               }`}
           >
             <div className="w-2 h-2 rounded-full bg-blue-500"></div>

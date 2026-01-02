@@ -6,21 +6,31 @@ export interface Subtask {
 }
 
 export interface Attachment {
-  name: string;
-  size: string;
+  id?: number;
+  name?: string;
+  size?: string;
+  file_name?: string;
+  file_url?: string;
+  created_at?: string;
 }
 
 export interface ApiTask {
   id: number;
   title: string;
   description?: string;
-  completed: boolean;
-  dueDate?: string;
-  priority: number; // 0 for undefined, 1 for Low, 2 for Medium, 3 for High
-  project?: string;
+  status: "pending" | "completed";
+  due_date?: string;
+  priority: string; // "low", "medium", "high"
+  project?: { id: number; name: string };
   tags?: string[];
-  subtasks?: Subtask[];
-  attachments?: Attachment[];
+  subtasks?: ApiTask[];
+  attachments?: { id: number; file_name: string; file_url: string; created_at: string }[];
+  comments?: { id: number; content: string; user_id: number; created_at: string }[];
+  recurrence?: string;
+  created_at: string;
+  updated_at: string;
+  completed_at?: string;
+  parent_task_id?: number;
 }
 
 export interface Task {
@@ -40,9 +50,10 @@ export interface Task {
 export type FilterType = "all" | "completed" | "pending" | "dueSoon" | "highPriority" | "High" | "Medium" | "Low";
 
 export interface Comment {
-  id: string;
-  text: string;
-  user?: string;
+  id: number;
+  content: string;
+  user_id: number;
+  created_at: string;
 }
 
 export * from './chat';

@@ -18,7 +18,8 @@ COPY . .
 # Set environment variables for build time
 ENV NEXT_TELEMETRY_DISABLED=1
 # Default API URL for Docker build - can be overridden with --build-arg
-ARG NEXT_PUBLIC_API_URL=https://todo-phase-3-backend.onrender.com
+# Use localhost:8000 for browser access (client-side calls)
+ARG NEXT_PUBLIC_API_URL=http://localhost:8000
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 
 # Build Next.js application with standalone output

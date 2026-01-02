@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import Sidebar from "@/components/Sidebar";
 import MainContent from "@/components/main-content";
 import TaskDetail from "@/components/Task-detail";
+import { TaskFilters } from "@/components/task-filters";
 import { Task, ApiTask, FilterType, ChatMessage } from "@/types";
 import { TaskForm } from "@/components/task-form";
 import { MessageInput, MessageList, TypingIndicator } from "@/components/chat";
@@ -17,18 +18,29 @@ interface TodoPageClientProps {
 }
 
 const mapApiTaskToTask = (apiTask: ApiTask): Task => {
-  const priorityMap: { [key: number]: "High" | "Medium" | "Low" | undefined } = {
-    0: undefined,
-    1: "Low",
-    2: "Medium",
-    3: "High",
+  // Backend returns status as "pending"/"completed" string and priority as "low"/"medium"/"high" string
+  const priorityMap: { [key: string]: "High" | "Medium" | "Low" } = {
+    "low": "Low",
+    "medium": "Medium",
+    "high": "High",
   };
 
   return {
-    ...apiTask,
     id: apiTask.id.toString(),
-    priority: priorityMap[apiTask.priority],
-    dueDate: apiTask.dueDate ? new Date(apiTask.dueDate) : undefined,
+    title: apiTask.title,
+    description: apiTask.description,
+    completed: apiTask.status === "completed",
+    priority: priorityMap[apiTask.priority] || undefined,
+    dueDate: apiTask.due_date ? new Date(apiTask.due_date) : undefined,
+    tags: apiTask.tags || [],
+    project: apiTask.project?.name || undefined,
+    subtasks: apiTask.subtasks?.map(st => ({
+      id: st.id.toString(),
+      title: st.title,
+      completed: st.status === "completed"
+    })) || [],
+    attachments: apiTask.attachments || [],
+    comments: apiTask.comments || [],
   };
 };
 
@@ -48,6 +60,18 @@ const TodoPageClient = ({ user }: TodoPageClientProps) => {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Task Filters state
+  const [taskFilters, setTaskFilters] = useState<TaskFilters>({
+    status: "all",
+    priority: "all",
+    sortBy: "date",
+    sortOrder: "desc",
+    searchQuery: "",
+    hasDueDate: null,
+    tags: [],
+    dueDateRange: null,
+  });
+
   // Get API URL safely
   const API_URL = typeof window !== 'undefined'
     ? process.env.NEXT_PUBLIC_API_URL
@@ -62,10 +86,11 @@ const TodoPageClient = ({ user }: TodoPageClientProps) => {
 
     try {
       setError(null);
-      const response = await fetch(`${API_URL}/api/tasks/`);
+      const response = await fetch(`${API_URL}/api/tasks`);
       if (!response.ok) throw new Error("Failed to fetch tasks");
       const data = await response.json();
-      const mappedTasks = data.map(mapApiTaskToTask);
+      const tasksData = data.tasks || data; // Handle both TaskListResponse and array formats
+      const mappedTasks = tasksData.map(mapApiTaskToTask);
       setTasks(mappedTasks);
     } catch (error) {
       console.error("Error fetching tasks:", error);
@@ -135,7 +160,7 @@ const TodoPageClient = ({ user }: TodoPageClientProps) => {
       );
     }
 
-    // Apply priority or completion filter
+    // Apply priority or completion filter (from Sidebar)
     if (activeFilter !== "all") {
       if (activeFilter === "completed") {
         updatedTasks = updatedTasks.filter((task) => task.completed);
@@ -167,8 +192,96 @@ const TodoPageClient = ({ user }: TodoPageClientProps) => {
       updatedTasks = updatedTasks.filter((task) => task.tags?.includes(activeTag));
     }
 
+    // Apply taskFilters (from TaskFilters component)
+    // Status filter
+    if (taskFilters.status !== "all") {
+      if (taskFilters.status === "completed") {
+        updatedTasks = updatedTasks.filter((task) => task.completed);
+      } else if (taskFilters.status === "pending") {
+        updatedTasks = updatedTasks.filter((task) => !task.completed);
+      }
+    }
+
+    // Priority filter
+    if (taskFilters.priority !== "all") {
+      const priorityMap: { [key: string]: "High" | "Medium" | "Low" } = {
+        "high": "High",
+        "medium": "Medium",
+        "low": "Low",
+      };
+      updatedTasks = updatedTasks.filter(
+        (task) => task.priority === priorityMap[taskFilters.priority]
+      );
+    }
+
+    // Has due date filter
+    if (taskFilters.hasDueDate !== null) {
+      if (taskFilters.hasDueDate) {
+        updatedTasks = updatedTasks.filter((task) => task.dueDate !== undefined);
+      } else {
+        updatedTasks = updatedTasks.filter((task) => task.dueDate === undefined);
+      }
+    }
+
+    // Due date range filter (including "Due Soon" quick filter)
+    if (taskFilters.dueDateRange && taskFilters.dueDateRange.from && taskFilters.dueDateRange.to) {
+      updatedTasks = updatedTasks.filter((task) => {
+        if (!task.dueDate || !taskFilters.dueDateRange) return false;
+        const taskDate = new Date(task.dueDate);
+        const fromDate = new Date(taskFilters.dueDateRange.from);
+        fromDate.setHours(0, 0, 0, 0);
+        const toDate = new Date(taskFilters.dueDateRange.to);
+        toDate.setHours(23, 59, 59, 999);
+        return taskDate >= fromDate && taskDate <= toDate;
+      });
+    }
+
+    // Tags filter
+    if (taskFilters.tags.length > 0) {
+      updatedTasks = updatedTasks.filter((task) =>
+        taskFilters.tags.some((tag) => task.tags?.includes(tag))
+      );
+    }
+
+    // Sort tasks
+    const sortKeyMap: { [key: string]: keyof Task } = {
+      "date": "dueDate",
+      "title": "title",
+      "priority": "priority",
+      "created": "id",
+    };
+
+    const sortKey = sortKeyMap[taskFilters.sortBy];
+    if (sortKey) {
+      updatedTasks.sort((a, b) => {
+        const aVal = a[sortKey];
+        const bVal = b[sortKey];
+
+        // Handle null/undefined values
+        if (aVal === undefined || aVal === null) return 1;
+        if (bVal === undefined || bVal === null) return -1;
+
+        // Special handling for due date (tasks without due date go last)
+        if (sortKey === "dueDate") {
+          const aDate = new Date(aVal as string | Date);
+          const bDate = new Date(bVal as string | Date);
+          return taskFilters.sortOrder === "asc"
+            ? aDate.getTime() - bDate.getTime()
+            : bDate.getTime() - aDate.getTime();
+        }
+
+        // Handle string comparison
+        if (typeof aVal === "string" && typeof bVal === "string") {
+          const comparison = aVal.localeCompare(bVal);
+          return taskFilters.sortOrder === "asc" ? comparison : -comparison;
+        }
+
+        return 0;
+      });
+    }
+
     setFilteredTasks(updatedTasks);
-  }, [tasks, searchQuery, activeFilter, activeTag]);
+  }, [tasks, searchQuery, activeFilter, activeTag, taskFilters]);
 
   const handleSelectTask = (task: Task) => setSelectedTask(task);
   const handleCloseDetail = () => setSelectedTask(null);
@@ -182,6 +295,26 @@ const TodoPageClient = ({ user }: TodoPageClientProps) => {
   const handleTagFilter = (tag: string) => {
     setActiveTag(tag);
     setIsMobileMenuOpen(false);
+  };
+
+  const handleTaskFiltersChange = (filters: TaskFilters) => {
+    setTaskFilters(filters);
+    // Also update search query for consistency with sidebar search
+    if (filters.searchQuery !== searchQuery) {
+      setSearchQuery(filters.searchQuery);
+    }
+  };
+
+  // Get title based on active filter
+  const getPageTitle = (): string => {
+    switch (activeFilter) {
+      case "all": return "All Tasks";
+      case "completed": return "Completed";
+      case "pending": return "Pending";
+      case "dueSoon": return "Due Soon";
+      case "highPriority": return "High Priority";
+      default: return "Today";
+    }
   };
 
   const handleTaskAdded = async () => {
@@ -210,16 +343,36 @@ const TodoPageClient = ({ user }: TodoPageClientProps) => {
   const handleToggleComplete = async (startedTask: Task) => {
     if (!API_URL) return;
 
-    const updatedTask = { ...startedTask, completed: !startedTask.completed };
+    const newCompleted = !startedTask.completed;
+    const updatedTask = { ...startedTask, completed: newCompleted };
     setTasks(tasks.map((t) => (t.id === startedTask.id ? updatedTask : t)));
 
     try {
-      const response = await fetch(`${API_URL}/api/tasks/${startedTask.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ completed: updatedTask.completed }),
-      });
-      if (!response.ok) await fetchTasks();
+      let response;
+
+      if (newCompleted) {
+        // Completing the task - use the complete endpoint
+        response = await fetch(`${API_URL}/api/tasks/${startedTask.id}/complete`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+        });
+      } else {
+        // Uncompleting the task - use the update endpoint
+        response = await fetch(`${API_URL}/api/tasks/${startedTask.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ completed: false }),
+        });
+      }
+
+      if (!response.ok) {
+        // Revert on error
+        setTasks(tasks.map((t) => (t.id === startedTask.id ? startedTask : t)));
+        throw new Error(`Failed to update task: ${response.status}`);
+      }
+
+      // Refresh tasks to get updated state and next recurring task (if any)
+      await fetchTasks();
     } catch (error) {
       console.error("Error updating task completion:", error);
       await fetchTasks(); // Revert on error
@@ -265,6 +418,7 @@ const TodoPageClient = ({ user }: TodoPageClientProps) => {
           onFilterChange={handleFilterChange}
           onTagFilter={handleTagFilter}
           activeFilter={activeFilter}
+          onAddTask={() => setIsAddModalOpen(true)}
         />
       </aside>
 
@@ -303,12 +457,22 @@ const TodoPageClient = ({ user }: TodoPageClientProps) => {
               </div>
             </div>
           ) : (
-            <MainContent
-              tasks={filteredTasks}
-              onTaskSelect={handleSelectTask}
-              onAddTask={() => setIsAddModalOpen(true)}
-              onToggleComplete={handleToggleComplete}
-            />
+            <div>
+              {/* Task Filters Component */}
+              <div className="px-4 md:px-8 pt-4 md:pt-8 pb-2">
+                <TaskFilters
+                  filters={taskFilters}
+                  onFiltersChange={handleTaskFiltersChange}
+                  onSearch={handleSearch}
+                />
+              </div>
+              <MainContent
+                tasks={filteredTasks}
+                onTaskSelect={handleSelectTask}
+                onToggleComplete={handleToggleComplete}
+                title={getPageTitle()}
+              />
+            </div>
           )}
         </div>
       </div>

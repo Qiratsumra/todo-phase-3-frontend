@@ -1,52 +1,24 @@
 "use client";
 import React from "react";
-import { Plus, ChevronDown, ListFilter, LayoutList } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { LayoutList } from "lucide-react";
 import TaskItem from "./Task-item";
 import { Task } from "@/types";
 
 interface MainContentProps {
   tasks: Task[];
   onTaskSelect: (task: Task) => void;
-  onAddTask: () => void;
   onToggleComplete: (task: Task) => void;
+  title?: string;
 }
 
-const MainContent = ({ 
-  tasks, 
-  onTaskSelect, 
-  onAddTask, 
-  onToggleComplete 
+const MainContent = ({
+  tasks,
+  onTaskSelect,
+  onToggleComplete,
+  title = "Tasks"
 }: MainContentProps) => {
   return (
-    <main className="flex-1 p-4 md:p-8 bg-gray-50 min-h-full">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 md:mb-8 gap-4">
-        
-        {/* Title Section */}
-        <div className="flex items-center gap-3">
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Today</h1>
-          <div className="bg-gray-200 px-3 py-1 rounded-full">
-             <span className="text-xl md:text-2xl font-bold text-gray-600">
-              {tasks.length}
-            </span>
-          </div>
-        </div>
-
-        {/* Action Buttons */}
-        {/* Mobile: Full width, buttons split 50/50. Desktop: Auto width */}
-        <div className="flex items-center gap-3 w-full sm:w-auto">
-          <Button variant="outline" className="flex-1 sm:flex-none">
-            <ListFilter className="w-4 h-4 mr-2" />
-            Filter
-          </Button>
-          <Button onClick={onAddTask} className="flex-1 sm:flex-none">
-            <Plus className="w-4 h-4 mr-2" />
-            Add Task
-          </Button>
-        </div>
-      </div>
-
+    <main className="px-4 md:px-8 pb-8 bg-gray-50 min-h-full">
       {/* Task List */}
       <div className="space-y-3 pb-20 md:pb-0">
         {tasks.length > 0 ? (

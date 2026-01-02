@@ -49,6 +49,9 @@ const FormSchema = z.object({
 
 const TaskDetail = ({ task, onClose, onTaskUpdated, onDelete }: TaskDetailProps) => {
   const [newSubtask, setNewSubtask] = useState("");
+  const [newComment, setNewComment] = useState("");
+  const [newAttachmentName, setNewAttachmentName] = useState("");
+  const [newAttachmentUrl, setNewAttachmentUrl] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -104,6 +107,58 @@ const TaskDetail = ({ task, onClose, onTaskUpdated, onDelete }: TaskDetailProps)
     );
   }
 
+  const handleAddAttachment = async () => {
+    if (newAttachmentName.trim() !== "" && newAttachmentUrl.trim() !== "" && task) {
+      try {
+        const response = await fetch(`${API_URL}/api/tasks/${task.id}/attachments`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            file_name: newAttachmentName.trim(),
+            file_url: newAttachmentUrl.trim()
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to add attachment');
+        }
+
+        setNewAttachmentName("");
+        setNewAttachmentUrl("");
+        onTaskUpdated();
+      } catch (error) {
+        console.error("Error adding attachment:", error);
+        alert("Failed to add attachment.");
+      }
+    }
+  };
+
+  const handleAddComment = async () => {
+    if (newComment.trim() !== "" && task) {
+      try {
+        const response = await fetch(`${API_URL}/api/tasks/${task.id}/comments`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ content: newComment.trim() }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to add comment');
+        }
+
+        setNewComment("");
+        onTaskUpdated();
+      } catch (error) {
+        console.error("Error adding comment:", error);
+        alert("Failed to add comment.");
+      }
+    }
+  };
+
   const onSubmit = async (data: z.infer<typeof FormSchema>) => {
     setIsSaving(true);
     
@@ -120,13 +175,13 @@ const TaskDetail = ({ task, onClose, onTaskUpdated, onDelete }: TaskDetailProps)
         description: data.description || "",
         priority: priorityMap[data.priority || 'none'],
         tags: data.tags && data.tags.length > 0 ? data.tags : [],
-        dueDate: data.dueDate || null,
-        subtasks: data.subtasks || [],
+        due_date: data.dueDate || null,
+        // subtasks are managed separately
         completed: task.completed,
       };
 
       const response = await fetch(`${API_URL}/api/tasks/${task.id}`, {
-        method: 'PUT',
+        method: 'PATCH', // Use PATCH for partial updates
         headers: { 
           'Content-Type': 'application/json',
         },
@@ -159,14 +214,72 @@ const TaskDetail = ({ task, onClose, onTaskUpdated, onDelete }: TaskDetailProps)
     }
   }
 
-  const handleAddSubtask = () => {
-    if (newSubtask.trim() !== "") {
-      const currentSubtasks = form.getValues("subtasks") || [];
-      form.setValue("subtasks", [
-        ...currentSubtasks,
-        { id: crypto.randomUUID(), title: newSubtask, completed: false },
-      ]);
-      setNewSubtask("");
+  const handleDeleteSubtask = async (subtaskId: string) => {
+    if (confirm("Are you sure you want to delete this subtask?")) {
+      try {
+        const response = await fetch(`${API_URL}/api/tasks/${subtaskId}`, {
+          method: 'DELETE',
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to delete subtask');
+        }
+
+        onTaskUpdated();
+      } catch (error) {
+        console.error("Error deleting subtask:", error);
+        alert("Failed to delete subtask.");
+      }
+    }
+  };
+
+  const handleToggleSubtask = async (subtaskId: string, completed: boolean) => {
+    try {
+      const response = await fetch(`${API_URL}/api/tasks/${subtaskId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ completed }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update subtask');
+      }
+
+      onTaskUpdated();
+    } catch (error) {
+      console.error("Error updating subtask:", error);
+      alert("Failed to update subtask.");
+    }
+  };
+
+  const handleAddSubtask = async () => {
+    if (newSubtask.trim() !== "" && task) {
+      try {
+        const subtaskData = {
+          title: newSubtask.trim(),
+          priority: 'medium', // Default priority for new subtasks
+        };
+
+        const response = await fetch(`${API_URL}/api/tasks/${task.id}/subtasks`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(subtaskData),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to create subtask');
+        }
+
+        setNewSubtask("");
+        onTaskUpdated(); // Refresh parent task to show new subtask
+      } catch (error) {
+        console.error("Error adding subtask:", error);
+        alert("Failed to add subtask.");
+      }
     }
   };
 
@@ -301,11 +414,7 @@ const TaskDetail = ({ task, onClose, onTaskUpdated, onDelete }: TaskDetailProps)
                     <input
                       type="checkbox"
                       checked={subtask.completed}
-                      onChange={(e) => {
-                        const newSubtasks = [...form.getValues("subtasks")!];
-                        newSubtasks[index].completed = e.target.checked;
-                        form.setValue("subtasks", newSubtasks);
-                      }}
+                      onChange={(e) => handleToggleSubtask(subtask.id, e.target.checked)}
                       className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
                     />
                     <Input
@@ -319,11 +428,7 @@ const TaskDetail = ({ task, onClose, onTaskUpdated, onDelete }: TaskDetailProps)
                     />
                     <button
                       type="button"
-                      onClick={() => {
-                        const newSubtasks = [...form.getValues("subtasks")!];
-                        newSubtasks.splice(index, 1);
-                        form.setValue("subtasks", newSubtasks);
-                      }}
+                      onClick={() => handleDeleteSubtask(subtask.id)}
                       className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 transition-opacity"
                     >
                       <X className="w-4 h-4" />
@@ -345,6 +450,71 @@ const TaskDetail = ({ task, onClose, onTaskUpdated, onDelete }: TaskDetailProps)
                     }
                   }}
                 />
+              </div>
+            </div>
+
+            <div>
+              <h3 className="text-sm font-semibold text-gray-500 mb-2">Comments</h3>
+              <div className="space-y-4">
+                {task.comments?.map((comment) => (
+                  <div key={comment.id} className="flex items-start gap-3">
+                    <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-sm font-semibold text-gray-600">
+                      {/* Placeholder for user avatar/initials */}
+                      U
+                    </div>
+                    <div className="flex-1">
+                      <div className="bg-gray-100 rounded-lg p-3">
+                        <p className="text-sm text-gray-800">{comment.content}</p>
+                      </div>
+                      <p className="text-xs text-gray-500 mt-1">
+                        {new Date(comment.created_at).toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="flex items-center gap-2 mt-4 pt-4 border-t">
+                <Input
+                  placeholder="Add a comment..."
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
+                  className="flex-1"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      handleAddComment();
+                    }
+                  }}
+                />
+                <Button onClick={handleAddComment} disabled={!newComment.trim()}>Send</Button>
+              </div>
+            </div>
+
+            <div>
+              <h3 className="text-sm font-semibold text-gray-500 mb-2">Attachments</h3>
+              <div className="space-y-2">
+                {task.attachments?.map((attachment) => (
+                  <div key={attachment.id} className="flex items-center justify-between bg-gray-100 p-2 rounded-lg">
+                    <a href={attachment.file_url} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:underline">
+                      {attachment.file_name}
+                    </a>
+                  </div>
+                ))}
+              </div>
+              <div className="flex items-center gap-2 mt-4 pt-4 border-t">
+                <Input
+                  placeholder="Attachment Name"
+                  value={newAttachmentName}
+                  onChange={(e) => setNewAttachmentName(e.target.value)}
+                  className="flex-1"
+                />
+                <Input
+                  placeholder="Attachment URL"
+                  value={newAttachmentUrl}
+                  onChange={(e) => setNewAttachmentUrl(e.target.value)}
+                  className="flex-1"
+                />
+                <Button onClick={handleAddAttachment} disabled={!newAttachmentName.trim() || !newAttachmentUrl.trim()}>Add</Button>
               </div>
             </div>
           </div>

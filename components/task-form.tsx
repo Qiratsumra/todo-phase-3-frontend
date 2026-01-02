@@ -35,6 +35,7 @@ const formSchema = z.object({
   priority: z.enum(['high', 'medium', 'low', 'none']),
   tags: z.string().optional(),
   dueDate: z.string().optional(),
+  recurrence: z.enum(['none', 'daily', 'weekly', 'monthly']).optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -55,6 +56,7 @@ export function TaskForm({ onTaskAdded }: TaskFormProps) {
       priority: "none" as const,
       tags: "",
       dueDate: "",
+      recurrence: "none" as const,
     },
   });
 
@@ -63,24 +65,30 @@ export function TaskForm({ onTaskAdded }: TaskFormProps) {
     setIsSubmitting(true);
 
     try {
-      const priorityMap: { [key: string]: number } = {
-        'none': 0,
-        'low': 1,
-        'medium': 2,
-        'high': 3,
+      // Backend expects priority as string ("low", "medium", "high")
+      const priorityMap: { [key: string]: string } = {
+        'none': 'low',  // Map 'none' to 'low' as default
+        'low': 'low',
+        'medium': 'medium',
+        'high': 'high',
       };
+
+      // Parse tags - split by comma and trim
+      const tagsArray = data.tags
+        ? data.tags.split(',').map(t => t.trim()).filter(t => t.length > 0)
+        : [];
 
       const taskData = {
         title: data.title,
-        description: data.description || null,
+        description: data.description || "",
         priority: priorityMap[data.priority],
-        tags: data.tags ? [data.tags] : null,
-        dueDate: data.dueDate || null,
-        completed: false,
+        tags: tagsArray,
+        due_date: data.dueDate ? new Date(data.dueDate).toISOString() : null,
+        recurrence: data.recurrence !== 'none' ? data.recurrence : 'none',
       };
 
       const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-      const response = await fetch(`${apiUrl}/api/tasks/`, {
+      const response = await fetch(`${apiUrl}/api/tasks`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -232,6 +240,38 @@ export function TaskForm({ onTaskAdded }: TaskFormProps) {
               </FormControl>
               <FormDescription className="text-xs">
                 Comma separated tags
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {/* Recurrence - Full Width */}
+        <FormField
+          control={form.control}
+          name="recurrence"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Repeat</FormLabel>
+              <Select
+                onValueChange={field.onChange}
+                defaultValue={field.value}
+                disabled={isSubmitting}
+              >
+                <FormControl>
+                  <SelectTrigger className="text-base md:text-sm">
+                    <SelectValue placeholder="Does not repeat" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="none">Does not repeat</SelectItem>
+                  <SelectItem value="daily">Daily</SelectItem>
+                  <SelectItem value="weekly">Weekly</SelectItem>
+                  <SelectItem value="monthly">Monthly</SelectItem>
+                </SelectContent>
+              </Select>
+              <FormDescription className="text-xs">
+                Automatically create next occurrence when completed
               </FormDescription>
               <FormMessage />
             </FormItem>

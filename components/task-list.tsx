@@ -651,6 +651,25 @@ export function TaskList({
                             </span>
                           )}
 
+                          {/* Tags Display */}
+                          {extendedTask.tags && extendedTask.tags.length > 0 && (
+                            <div className="flex flex-wrap gap-1">
+                              {extendedTask.tags.slice(0, 3).map((tag, idx) => (
+                                <span
+                                  key={idx}
+                                  className="inline-flex items-center px-2 py-0.5 text-xs font-medium rounded bg-blue-50 text-blue-700 border border-blue-200"
+                                >
+                                  {tag}
+                                </span>
+                              ))}
+                              {extendedTask.tags.length > 3 && (
+                                <span className="inline-flex items-center px-2 py-0.5 text-xs font-medium rounded bg-gray-100 text-gray-600">
+                                  +{extendedTask.tags.length - 3}
+                                </span>
+                              )}
+                            </div>
+                          )}
+
                           {subtasks.length > 0 && (
                             <button
                               onClick={(e) => {
